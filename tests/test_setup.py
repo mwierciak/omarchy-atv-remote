@@ -55,3 +55,12 @@ class SetupTests(unittest.TestCase):
             runtime.install()
         run.assert_not_called()
         self.assertEqual(list(destination.iterdir()), [])
+
+    def test_stdin_remote_mode_omits_command_from_exec_arguments(self):
+        with patch.object(runtime, 'installed', return_value=True), \
+             patch.object(runtime.os, 'execv') as execv, \
+             patch.object(sys, 'argv', ['runtime.py', 'remote-stdin', '10.0.0.5', '/plugin/remote_daemon.py']):
+            runtime.main()
+        arguments = execv.call_args.args[1]
+        self.assertEqual(arguments[-2:], ['10.0.0.5', '/plugin/remote_daemon.py'])
+        self.assertNotIn('text_append:', ' '.join(arguments))

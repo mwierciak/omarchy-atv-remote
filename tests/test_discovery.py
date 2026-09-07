@@ -59,12 +59,17 @@ class DiscoveryTests(unittest.TestCase):
     def test_limits_recovery_to_local_lan(self):
         routes = [{"dst": "192.168.1.0/24", "dev": "wlan0", "prefsrc": "192.168.1.5"},
                   {"dst": "100.64.0.0/10", "dev": "tailscale0"},
-                  {"dst": "172.17.0.0/16", "dev": "docker0"}]
+                  {"dst": "10.8.0.0/24", "dev": "tun0", "prefsrc": "10.8.0.2"},
+                  {"dst": "10.9.0.0/24", "dev": "wg0", "prefsrc": "10.9.0.2"},
+                  {"dst": "172.17.0.0/16", "dev": "docker0"},
+                  {"dst": "203.0.113.0/24", "dev": "eth0", "prefsrc": "203.0.113.2"}]
         with patch.object(discovery, "capture", return_value=types.SimpleNamespace(stdout=json.dumps(routes))):
             hosts = discovery.local_candidates()
         self.assertEqual(len(hosts), 253)
         self.assertIn("192.168.1.213", hosts)
         self.assertNotIn("192.168.1.5", hosts)
+        self.assertNotIn("10.8.0.3", hosts)
+        self.assertNotIn("10.9.0.3", hosts)
 
     def test_recovers_moved_tv_and_updates_cache(self):
         moved = {"name": "TV", "identifier": "AA:BB", "deviceIdentifier": "AA:BB", "model": "AppleTV", "address": "10.0.0.9"}
