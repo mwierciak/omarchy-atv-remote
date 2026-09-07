@@ -14,10 +14,14 @@ environment under `~/.local/share/omarchy/apple-tv-remote/`.
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/andershfranzen/omarchy-atv-remote --enable
+omarchy plugin add https://github.com/mwierciak/omarchy-atv-remote
 ```
 
-The widget is added to the Omarchy bar. Open its remote icon to continue.
+The plugin is initially disabled so you can review the checked-out code before
+enabling it. For an immutable installation, detach the checkout at the full
+commit SHA you reviewed; Omarchy plugin updates otherwise follow the repository's
+moving default branch. Enable the plugin after review, add its widget to the
+Omarchy bar, and open the remote icon to continue.
 
 ## Pair
 
@@ -84,8 +88,10 @@ and switches to text-input mode. Printable keys and Space type directly into
 the Apple TV field; Backspace deletes text. The normal remote mappings return
 as soon as the field loses focus. The pop-out shows the text sent during the
 current typing burst, reflects Backspace edits, and clears the preview shortly
-after typing stops. Enable `maskTextPreview` in the widget settings to replace
-the preview with bullets when entering sensitive text.
+after typing stops. The preview is masked by default; disable `maskTextPreview`
+in the widget settings only when displaying typed characters is acceptable.
+Typed text is framed over the helper's standard input and the private backend
+socket, never command-line arguments.
 
 The selected Apple TV is stored by its stable device identifier, so changing
 DHCP addresses does not require selecting or pairing it again. Backend sessions
@@ -99,16 +105,18 @@ Discovered TVs' identifiers and last known IP addresses are cached in
 If multicast discovery misses a saved TV, the panel tries its address directly
 and verifies its identifier before displaying it. A TV must respond to appear;
 cached entries are never presented as live devices without checking them.
-If a saved address no longer works, bounded scans of directly connected private
-IPv4 LANs look for Apple TVs again. Devices are selected by stable identifier,
-so a changed address does not change the selected TV. The available-TV list
-refreshes automatically every minute, including while the panel is closed.
-A broader LAN scan runs at startup and every five minutes to find new TVs even
-when multicast discovery is blocked and the selected TV is still reachable.
-Scans pause while managing/pairing a TV; overlapping scans are skipped.
+If a saved address no longer works, you can opt into bounded scans of directly
+connected private IPv4 Ethernet or Wi-Fi LANs with `networkScan` in the widget
+settings. VPN and virtual interfaces are not actively scanned. Devices are
+selected by stable identifier, so a changed address does not change the selected
+TV. The available-TV list refreshes automatically every minute, including while
+the panel is closed. With `networkScan` enabled, a broader LAN scan runs at
+startup and every five minutes to find new TVs even when multicast discovery is
+blocked and the selected TV is still reachable. Scans pause while
+managing/pairing a TV; overlapping scans are skipped.
 Connection/metadata refresh every 10 seconds only while the remote is open.
-Large networks are limited to the local /24, and common virtual interfaces are
-excluded.
+Large networks are limited to the local /24, and only conventional physical
+Ethernet or Wi-Fi interface names are eligible.
 
 The panel can also be scripted with Omarchy Shell IPC, for example:
 

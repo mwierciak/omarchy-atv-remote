@@ -22,7 +22,8 @@ Panel {
   readonly property var activeDevice: findActiveDevice()
   readonly property string activeIdentifier: activeDevice ? String(activeDevice.identifier) : ""
   readonly property string activeAddress: activeDevice ? String(activeDevice.address) : ""
-  readonly property bool maskTextPreview: Boolean(setting("maskTextPreview", false))
+  readonly property bool maskTextPreview: Boolean(setting("maskTextPreview", true))
+  readonly property bool networkScan: Boolean(setting("networkScan", false))
   readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property color urgent: bar ? bar.urgent : Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
@@ -68,7 +69,8 @@ Panel {
 
   function saveSettings(changes) {
     if (!bar || !bar.shell) return
-    var entry = {id: moduleName, identifier: identifier, maskTextPreview: maskTextPreview, shortcuts: shortcutSettings}
+    var entry = {id: moduleName, identifier: identifier, maskTextPreview: maskTextPreview,
+                 networkScan: networkScan, shortcuts: shortcutSettings}
     for (var key in changes) entry[key] = changes[key]
     bar.shell.updateEntryInline(moduleName, entry)
   }
@@ -193,7 +195,8 @@ Panel {
     if (action.running || commandQueue.length === 0 || activeAddress === "") return
     runningCommand = commandQueue[0]
     commandQueue = commandQueue.slice(1)
-    action.command = [backend, activeAddress, runningCommand]
+    action.pendingCommand = runningCommand
+    action.command = [backend, activeAddress, "--stdin"]
     action.running = true
   }
 
@@ -287,7 +290,7 @@ Panel {
   function refresh(scanNetwork) {
     if (discover.running || pairProcess.running) return
     discover.command = [pluginDir + "/bin/discover"]
-    if (scanNetwork === true) discover.command = discover.command.concat(["--network"])
+    if (scanNetwork === true && networkScan) discover.command = discover.command.concat(["--network"])
     if (connectionState !== "connected") statusText = "Searching…"
     discover.running = true
   }
@@ -309,7 +312,7 @@ Panel {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
-  Component.onCompleted: refresh(true)
+  Component.onCompleted: refresh(networkScan)
   Component.onDestruction: {
     lifetime.running = false
     discover.running = false
@@ -418,7 +421,15 @@ Panel {
 
   Process {
     id: action
+    property string pendingCommand: ""
     environment: ({ATV_COMPONENT_PID: String(lifetime.processId)})
+    stdinEnabled: true
+    onStarted: {
+      // Commands can contain passwords typed into an Apple TV field. Keep them
+      // out of argv and /proc/PID/cmdline by sending a bounded JSON frame.
+      write(JSON.stringify({command: pendingCommand}) + "\n")
+      pendingCommand = ""
+    }
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -435,6 +446,7 @@ Panel {
       if (exitCode === 0 && ["play", "pause", "play_pause"].indexOf(root.runningCommand) >= 0)
         Qt.callLater(root.refreshStatus)
       root.runningCommand = ""
+      action.pendingCommand = ""
       Qt.callLater(root.runNextCommand)
     }
   }
@@ -517,7 +529,7 @@ Panel {
     repeat: true
     onTriggered: {
       root.discoveryCycle += 1
-      root.refresh(root.discoveryCycle % 5 === 0)
+      root.refresh(root.networkScan && root.discoveryCycle % 5 === 0)
     }
   }
 

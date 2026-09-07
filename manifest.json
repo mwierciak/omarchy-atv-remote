@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "anders.appletv-remote",
   "name": "Apple TV Remote",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": "Anders Haas Franzen",
   "license": "MIT",
   "description": "Keyboard remote for Apple TV with in-panel pairing, automatic discovery, and Now Playing.",
@@ -25,7 +25,8 @@
     "allowMultiple": false,
     "defaults": {
       "identifier": "",
-      "maskTextPreview": false,
+      "maskTextPreview": true,
+      "networkScan": false,
       "shortcuts": "{}"
     },
     "schema": [
@@ -40,8 +41,15 @@
         "key": "maskTextPreview",
         "type": "boolean",
         "label": "Mask typed text",
-        "defaultValue": false,
+        "defaultValue": true,
         "description": "Hide typed characters in the pop-out for privacy."
+      },
+      {
+        "key": "networkScan",
+        "type": "boolean",
+        "label": "Scan local network",
+        "defaultValue": false,
+        "description": "Actively probe the directly connected Ethernet or Wi-Fi network when multicast discovery fails."
       }
     ]
   }
