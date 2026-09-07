@@ -86,8 +86,17 @@ def local_candidates():
     candidates = []
     for route in routes:
         try:
+            interface = route.get("dev", "")
             network = ipaddress.IPv4Network(route.get("dst", ""))
-            if not network.is_private or route.get("dev", "").startswith(("tailscale", "docker", "br-", "virbr", "lo")):
+            # Active scanning is deliberately limited to conventional physical
+            # Ethernet and Wi-Fi interfaces. VPN and virtual interface names
+            # vary too widely for a safe denylist.
+            if not isinstance(interface, str) or not interface.startswith(("en", "eth", "wl")):
+                continue
+            private_lans = (ipaddress.IPv4Network("10.0.0.0/8"),
+                            ipaddress.IPv4Network("172.16.0.0/12"),
+                            ipaddress.IPv4Network("192.168.0.0/16"))
+            if not any(network.subnet_of(block) for block in private_lans):
                 continue
             # Avoid sweeping a large enterprise/VPN network.
             if network.prefixlen < 24:

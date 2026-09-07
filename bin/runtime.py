@@ -55,7 +55,8 @@ def main():
         print(json.dumps({'ok':False, 'state':'setup', 'error':'Setup required', 'devices':[]}), flush=True)
         return 127
     executable = str(VENV / 'bin/python')
-    script = {'discover':'discovery.py', 'remote':'remote_client.py', 'pair':'pairing.py'}.get(mode)
+    script = {'discover':'discovery.py', 'remote':'remote_client.py',
+              'remote-stdin':'remote_client.py', 'pair':'pairing.py'}.get(mode)
     if script is None:
         raise ValueError('Unsupported runtime mode')
     os.execv(executable, [executable, '-E', '-s', '-B', str(ROOT / 'bin' / script), *args])

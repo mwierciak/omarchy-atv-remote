@@ -12,9 +12,18 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from command_input import read_command
 from safe_io import runtime_directory, open_file
 
-address, command, daemon = sys.argv[1:4]
+if len(sys.argv) == 4:
+    address, command, daemon = sys.argv[1:4]
+    if command.startswith('text_append:'):
+        raise ValueError('Text commands must be read from stdin')
+elif len(sys.argv) == 3:
+    address, daemon = sys.argv[1:3]
+    command = read_command(sys.stdin.buffer)
+else:
+    raise ValueError("An address, command source, and daemon are required")
 address = str(ipaddress.IPv4Address(address))
 runtime = runtime_directory()
 daemon_hash = hashlib.sha256(b"".join(Path(daemon).with_name(name).read_bytes() for name in ("remote_daemon.py", "backend_errors.py", "safe_io.py", "secure_storage.py", "runner.py"))).hexdigest()[:10]

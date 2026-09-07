@@ -2,7 +2,13 @@
 set -euo pipefail
 export PATH=/usr/bin:/bin
 plugin_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-[[ $# == 2 ]] || { printf 'Usage: apple-tv <IPv4 address> <command>\n' >&2; exit 2; }
+[[ $# == 2 ]] || { printf 'Usage: apple-tv <IPv4 address> <command|--stdin>\n' >&2; exit 2; }
+if [[ "$2" == --stdin ]]; then
+  # The JSON command is read by remote_client.py from inherited stdin so text
+  # typed into Apple TV fields never appears in a process argument.
+  exec /usr/bin/python -E -s -B "$plugin_dir/bin/runner.py" 25 /usr/bin/python -E -s -B "$plugin_dir/bin/runtime.py" remote-stdin "$1" "$plugin_dir/bin/remote_daemon.py"
+fi
+[[ "$2" != text_append:* ]] || { printf 'Text commands must be supplied with --stdin.\n' >&2; exit 2; }
 limit=25
 [[ "$2" == keyboard_watch ]] && limit=3600
 exec /usr/bin/python -E -s -B "$plugin_dir/bin/runner.py" "$limit" /usr/bin/python -E -s -B "$plugin_dir/bin/runtime.py" remote "$1" "$2" "$plugin_dir/bin/remote_daemon.py"
